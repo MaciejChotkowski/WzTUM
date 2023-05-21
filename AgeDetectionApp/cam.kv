@@ -1,5 +1,5 @@
-#:kivy 2.2.0
-<MyLayout>:
+#:kivy 2.1.0
+<Root>:
     image: image
     GridLayout:
         cols: 2
@@ -15,14 +15,38 @@
 
             Button:
                 text: 'Load model'
+                on_press: root.load_model()
             Button:
                 text: 'Use camera'
+                on_press: root.switch_to_camera()
             Button:
                 text: 'Load image folder'
+                on_press: root.switch_to_image()
             Button:
                 text: 'Load video'
+                on_press: root.switch_to_video()
             Label:
                 text: 'age detected: '
 
         Image:
             id: image
+
+
+<LoadDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Load"
+                on_release: root.load(filechooser.path, filechooser.selection)
