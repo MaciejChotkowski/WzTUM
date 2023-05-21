@@ -1,0 +1,28 @@
+#:kivy 2.2.0
+<MyLayout>:
+    image: image
+    GridLayout:
+        cols: 2
+        size: root.width, root.height
+
+        BoxLayout:
+            id: side_panel
+            cols: 1
+            size_hint: 0.2, 1
+            # default_size: None, dp(35)
+            orientation: 'vertical'
+            padding: 10
+
+            Button:
+                text: 'Load model'
+            Button:
+                text: 'Use camera'
+            Button:
+                text: 'Load image folder'
+            Button:
+                text: 'Load video'
+            Label:
+                text: 'age detected: '
+
+        Image:
+            id: image
