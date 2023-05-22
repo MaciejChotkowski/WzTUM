@@ -12,6 +12,7 @@ from kivy.properties import ObjectProperty
 from kivy.uix.popup import Popup
 
 import cv2
+import os
 
 from enum import Enum
 
@@ -33,35 +34,52 @@ class LoadDialog(FloatLayout):
 class Root(Widget):
     image = ObjectProperty(None)
 
-    def switch_to_video(self):
-        global input_type
-        input_type = InputType.VIDEO
-
     def switch_to_camera(self):
         global input_type
         input_type = InputType.CAMERA
 
+    def switch_to_video(self):
+        global input_type
+        input_type = InputType.VIDEO
+        content = LoadDialog(load=self.load_video, cancel=self.dismiss_popup)
+        self._popup = Popup(title="Choose video file", content=content,
+                            size_hint=(0.7, 0.7))
+        self._popup.open()
+
     def switch_to_image(self):
         global input_type
         input_type = InputType.IMAGE
+        content = LoadDialog(load=self.load_image, cancel=self.dismiss_popup)
+        self._popup = Popup(title="Choose images", content=content,
+                            size_hint=(0.7, 0.7))
+        self._popup.open()
 
-    def load_model(self):
-        self.show_load()
-
-    def show_load(self):
-        content = LoadDialog(load=self.load, cancel=self.dismiss_popup)
-        self._popup = Popup(title="Load file", content=content,
-                            size_hint=(0.9, 0.9))
+    def switch_model(self):
+        content = LoadDialog(load=self.load_model, cancel=self.dismiss_popup)
+        self._popup = Popup(title="Choose model file", content=content,
+                            size_hint=(0.7, 0.7))
         self._popup.open()
 
     def dismiss_popup(self):
         self._popup.dismiss()
 
-    def load(self, path, filename):
-        with open(os.path.join(path, filename[0])) as stream:
-            self.text_input.text = stream.read()
-
+    def load_model(self, filename):
+        load_file_path = os.path.join(filename[0])
         self.dismiss_popup()
+
+        # WCZYTYWANIE MODELU
+
+    def load_video(self, filename):
+        load_file_path = os.path.join(filename[0])
+        self.dismiss_popup()
+
+        # WCZYTYWANIE FILMU
+
+    def load_image(self, filename):
+        load_file_path = os.path.join(filename[0])
+        self.dismiss_popup()
+
+        # WCZYTYWANIE OBRAZKÓW
 
 
 class CamApp(App):
@@ -92,4 +110,4 @@ class CamApp(App):
 
 if __name__ == '__main__':
     CamApp().run()
-    # cv2.destroyAllWindows()
+    cv2.destroyAllWindows()

@@ -9,22 +9,21 @@
             id: side_panel
             cols: 1
             size_hint: 0.2, 1
-            # default_size: None, dp(35)
             orientation: 'vertical'
             padding: 10
 
             Button:
                 text: 'Load model'
-                on_press: root.load_model()
+                on_release: root.switch_model()
             Button:
                 text: 'Use camera'
-                on_press: root.switch_to_camera()
+                on_release: root.switch_to_camera()
             Button:
                 text: 'Load image folder'
-                on_press: root.switch_to_image()
+                on_release: root.switch_to_image()
             Button:
                 text: 'Load video'
-                on_press: root.switch_to_video()
+                on_release: root.switch_to_video()
             Label:
                 text: 'age detected: '
 
@@ -37,8 +36,9 @@
         size: root.size
         pos: root.pos
         orientation: "vertical"
-        FileChooserListView:
+        FileChooserIconView:
             id: filechooser
+            path: '../'
 
         BoxLayout:
             size_hint_y: None
@@ -49,4 +49,4 @@
 
             Button:
                 text: "Load"
-                on_release: root.load(filechooser.path, filechooser.selection)
+                on_release: root.load(filechooser.selection)
