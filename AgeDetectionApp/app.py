@@ -64,19 +64,22 @@ class Root(Widget):
         self._popup.dismiss()
 
     def load_model(self, filename):
-        load_file_path = os.path.join(filename[0])
+        if len(filename) > 0:
+            load_file_path = os.path.join(filename[0])
         self.dismiss_popup()
 
         # WCZYTYWANIE MODELU
 
     def load_video(self, filename):
-        load_file_path = os.path.join(filename[0])
+        if len(filename) > 0:
+            load_file_path = os.path.join(filename[0])
         self.dismiss_popup()
 
         # WCZYTYWANIE FILMU
 
     def load_image(self, filename):
-        load_file_path = os.path.join(filename[0])
+        if len(filename) > 0:
+            load_file_path = os.path.join(filename[0])
         self.dismiss_popup()
 
         # WCZYTYWANIE OBRAZKÓW
@@ -90,22 +93,40 @@ class CamApp(App):
         self.capture = cv2.VideoCapture(0)
         cv2.namedWindow("CV2 Image")
         Clock.schedule_interval(self.update, 1.0/30.0)
+
+        # TO DO ZASTĄPIENIA OFC
+        self.face_cascade = cv2.CascadeClassifier('../../haar.xml')
+
         return self.layout
 
     def update(self, dt):
         if input_type == InputType.CAMERA:
-            ret, frame = self.capture.read()
-            cv2.imshow("CV2 Image", frame)
-            buf1 = cv2.flip(frame, 0)
-            buf = buf1.tostring()
-            texture1 = Texture.create(
-                size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
-            texture1.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
-            self.layout.image.texture = texture1
+            self.display_camera()
         elif input_type == InputType.IMAGE:
-            pass
+            self.display_image()
         elif input_type == InputType.VIDEO:
-            pass
+            self.display_video()
+
+    def display_camera(self):
+        ret, frame = self.capture.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = self.face_cascade.detectMultiScale(
+            gray, scaleFactor=1.5, minNeighbors=5)
+        for (x, y, w, h) in faces:
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
+        cv2.imshow('frame', frame)
+        buf1 = cv2.flip(frame, 0)
+        buf = buf1.tostring()
+        texture1 = Texture.create(
+            size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
+        texture1.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
+        self.layout.image.texture = texture1
+
+    def display_video(self):
+        pass
+
+    def display_image(self):
+        pass
 
 
 if __name__ == '__main__':
