@@ -33,14 +33,6 @@ gpus = tf.config.experimental.list_physical_devices('GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
-
-class InputType(Enum):
-    VIDEO = 1
-    IMAGE = 2
-    CAMERA = 3
-
-
-input_type = InputType.CAMERA
 capture = cv2.VideoCapture(0)
 agemodel = None
 
@@ -66,16 +58,19 @@ def detect_faces(frame):
 
             cv2.rectangle(frame, (x, y), (w, h), (0, 255, 0), 2)
             extracted_face = frame[y:h, x:w]
-            cv2.imshow('face', extracted_face)
-            cv2.imwrite('extracted_face.png', extracted_face)
+            # cv2.imwrite('extracted_face.png', extracted_face)
 
-            age_str = process_and_predict("extracted_face.png")
-            # print(age_str)
-            return age_str
+            age_str = process_and_predict(extracted_face)
+
+            cv2.putText(frame, age_str, (x, y-10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36, 255, 12), 2)
+    return frame
 
 
-def process_and_predict(file):
-    im = Image.open(file).convert('L')
+def process_and_predict(image):
+    im = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    im = Image.fromarray(im)
     width, height = im.size
     if width == height:
         im = im.resize((200, 200), Image.ANTIALIAS)
@@ -85,15 +80,13 @@ def process_and_predict(file):
             right = width/2 + height/2
             top = 0
             bottom = height
-            im = im.crop((left, top, right, bottom))
-            im = im.resize((200, 200), Image.ANTIALIAS)
         else:
             left = 0
             right = width
             top = 0
             bottom = width
-            im = im.crop((left, top, right, bottom))
-            im = im.resize((200, 200), Image.ANTIALIAS)
+        im = im.crop((left, top, right, bottom))
+        im = im.resize((200, 200), Image.ANTIALIAS)
 
     ar = np.asarray(im)
     ar = ar.astype('float32')
@@ -133,12 +126,10 @@ class Root(Widget):
         global input_type, capture
         capture.release()
         capture = cv2.VideoCapture(0)
-        input_type = InputType.CAMERA
 
     def switch_to_video(self):
         global input_type
         capture.release()
-        input_type = InputType.VIDEO
         content = LoadDialog(load=self.load_video, cancel=self.dismiss_popup)
         self._popup = Popup(title="Choose video file", content=content,
                             size_hint=(0.7, 0.7))
@@ -147,7 +138,6 @@ class Root(Widget):
     def switch_to_image(self):
         global input_type, capture
         capture.release()
-        input_type = InputType.IMAGE
         content = LoadDialog(load=self.load_image, cancel=self.dismiss_popup)
         self._popup = Popup(title="Choose images", content=content,
                             size_hint=(0.7, 0.7))
@@ -192,55 +182,22 @@ class CamApp(App):
         cv2.namedWindow("CV2 Image")
         Clock.schedule_interval(self.update, 1.0/30.0)
 
-        # TO DO ZASTĄPIENIA OFC
-        self.face_cascade = cv2.CascadeClassifier('../../haar.xml')
-
         return self.layout
 
+    def close_app(self):
+        self.stop()
+
     def update(self, dt):
-        if input_type == InputType.CAMERA:
-            self.display_camera()
-        elif input_type == InputType.IMAGE:
-            self.display_image()
-        elif input_type == InputType.VIDEO:
-            self.display_video()
+        self.display()
 
-    def display_camera(self):
+    def display(self):
         global capture
         ret, frame = capture.read()
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = self.face_cascade.detectMultiScale(
-            gray, scaleFactor=1.5, minNeighbors=5)
-        for (x, y, w, h) in faces:
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
-        cv2.imshow('frame', frame)
-        buf1 = cv2.flip(frame, 0)
-        buf = buf1.tostring()
-        texture1 = Texture.create(
-            size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
-        texture1.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
-        self.layout.image.texture = texture1
-        if agemodel is not None:
-            age_string = detect_faces(frame)
-            self.layout.age_label.text = age_string
 
-    def display_video(self):
-        global capture
-        ret, frame = capture.read()
-        if ret == True:
-            cv2.imshow('frame', frame)
-            buf1 = cv2.flip(frame, 0)
-            buf = buf1.tostring()
-            texture1 = Texture.create(
-                size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
-            texture1.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
-            self.layout.image.texture = texture1
+        if ret:
+            if agemodel is not None:
+                frame = detect_faces(frame)
 
-    def display_image(self):
-        global capture
-        ret, frame = capture.read()
-        if ret == True:
-            cv2.imshow('frame', frame)
             buf1 = cv2.flip(frame, 0)
             buf = buf1.tostring()
             texture1 = Texture.create(
