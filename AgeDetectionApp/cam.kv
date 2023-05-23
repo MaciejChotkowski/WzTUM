@@ -1,0 +1,53 @@
+#:kivy 2.1.0
+<Root>:
+    image: image
+    GridLayout:
+        cols: 2
+        size: root.width, root.height
+
+        BoxLayout:
+            id: side_panel
+            cols: 1
+            size_hint: 0.2, 1
+            orientation: 'vertical'
+            padding: 10
+
+            Button:
+                text: 'Load model'
+                on_release: root.switch_model()
+            Button:
+                text: 'Use camera'
+                on_release: root.switch_to_camera()
+            Button:
+                text: 'Load image'
+                on_release: root.switch_to_image()
+            Button:
+                text: 'Load video'
+                on_release: root.switch_to_video()
+            Button:
+                text: 'Close'
+                on_release: app.stop()
+
+        Image:
+            id: image
+
+
+<LoadDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserIconView:
+            id: filechooser
+            path: '../'
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Load"
+                on_release: root.load(filechooser.selection)
