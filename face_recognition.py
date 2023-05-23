@@ -34,7 +34,7 @@ def process_and_predict(file):
     ar = np.asarray(im)
     ar = ar.astype('float32')
     ar /= 255.0
-    ar = ar.reshape(1, 200, 200, 1) # caly resizing moze tez mozna prosciej w cv2
+    ar = ar.reshape(1, 200, 200, 1) # caly resizing moze tez mozna prosciej w cv2, bez zapisywania pliku
     age = agemodel.predict(ar)
     
     age = np.argmax(age)
@@ -73,7 +73,6 @@ while True:
 
             cv2.rectangle(frame, (x, y), (w, h), (0, 255, 0), 2)
             extracted_face = frame[y:h, x:w]
-            cv2.imshow('face', extracted_face)
             cv2.imwrite('extracted_face.png', extracted_face)
 
             age_str = process_and_predict("extracted_face.png")
