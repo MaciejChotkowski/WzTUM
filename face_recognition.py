@@ -7,7 +7,7 @@ from tensorflow import keras
 modelFile = "res10_300x300_ssd_iter_140000_fp16.caffemodel"
 configFile = "deploy.prototxt"
 net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
-agemodel = keras.models.load_model('Models/regression_efficientNet_mp_5_08.h5') 
+agemodel = keras.models.load_model('./Models/5_04.h5') 
 cap = cv2.VideoCapture(0)
 
 # Shared variables
@@ -43,12 +43,27 @@ def face_detection():
                 if confidence > 0.5:
                     box = detections[0, 0, i, 3:7] * np.array([frame.shape[1], frame.shape[0], frame.shape[1], frame.shape[0]])
                     box = box.astype("int")
-                    (x,y,w,h) = box
-                    cv2.rectangle(frame, (x, y), (w, h), (0, 255, 0), 2)
-                    extracted_face = frame[y:h, x:w]
-
+                    (x, y, x2, y2) = box.astype("int")
+                    r = (x2-x)-(y2-y)
+                    if(r>0):
+                        m = (y+y2)//2
+                        y = m - (x2-x)//2
+                        y2 = m + (x2-x)//2
+                    elif(r<0):
+                        m = (x+x2)//2
+                        x= m - (y2-y)//2
+                        x2 = m + (y2-y)//2
+                    
+                    x -= (x2-x)//20
+                    x2 +=(x2-x)//20
+                    y -= (y2-y)//20
+                    y2 +=(y2-y)//20
+                    if(x<0 or y<0):
+                        continue
+                    extracted_face = frame[y:y2, x:x2]
+                    #cv2.rectangle(frame, (x, y), (x2, y2), (0, 255, 0), 2)
                     age_str = process_and_predict(extracted_face)
-                    local_boxes.append((box,age_str))
+                    local_boxes.append(((x,y,x2,y2),age_str))
             with lock:
                 boxes = local_boxes
 
