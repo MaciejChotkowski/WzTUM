@@ -35,6 +35,11 @@ for gpu in gpus:
 
 capture = cv2.VideoCapture(0)
 agemodel = None
+output = None
+
+output_path = 'output'
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
 
 
 def detect_faces(frame):
@@ -139,7 +144,7 @@ class Root(Widget):
         global input_type, capture
         capture.release()
         content = LoadDialog(load=self.load_image, cancel=self.dismiss_popup)
-        self._popup = Popup(title="Choose images", content=content,
+        self._popup = Popup(title="Choose image", content=content,
                             size_hint=(0.7, 0.7))
         self._popup.open()
 
@@ -155,21 +160,27 @@ class Root(Widget):
     def load_model(self, filename):
         global agemodel
         if len(filename) > 0:
-            load_file_path = os.path.join(filename[0])
+            load_file_path = filename[0]
             agemodel = keras.models.load_model(load_file_path)
         self.dismiss_popup()
 
     def load_video(self, filename):
         global capture
+        global output
         if len(filename) > 0:
-            load_file_path = os.path.join(filename[0])
+            load_file_path = filename[0]
+            filename = os.path.basename(load_file_path)
+            new_filename = 'output/' + filename[:filename.rfind('.')] + '.avi'
             capture = cv2.VideoCapture(load_file_path)
+            output = cv2.VideoWriter(new_filename,
+                                     cv2.VideoWriter_fourcc(*'MJPG'),
+                                     int(capture.get(5)), (int(capture.get(3)), int(capture.get(4))))
         self.dismiss_popup()
 
     def load_image(self, filename):
         global capture
         if len(filename) > 0:
-            load_file_path = os.path.join(filename[0])
+            load_file_path = filename[0]
             capture = cv2.VideoCapture(load_file_path)
         self.dismiss_popup()
 
@@ -192,6 +203,7 @@ class CamApp(App):
 
     def display(self):
         global capture
+        global output
         ret, frame = capture.read()
 
         if ret:
@@ -204,6 +216,12 @@ class CamApp(App):
                 size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
             texture1.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
             self.layout.image.texture = texture1
+
+            if output is not None:
+                output.write(frame)
+        else:
+            if output is not None:
+                output.release()
 
 
 if __name__ == '__main__':
