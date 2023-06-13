@@ -35,11 +35,41 @@ for gpu in gpus:
 
 capture = cv2.VideoCapture(0)
 agemodel = None
-output = None
 
 output_path = 'output'
 if not os.path.exists(output_path):
     os.makedirs(output_path)
+
+
+class Writer:
+    def __init__(self):
+        self.type = None
+        self.path = None
+        self.output = None
+        self.writing = False
+
+    def set(self, type, path, fps=0, width=0, height=0):
+        self.writing = True
+        self.type = type
+        self.path = path
+        if self.type == 'video':
+            self.output = cv2.VideoWriter(path,
+                                          cv2.VideoWriter_fourcc(*'MJPG'),
+                                          fps, (width, height))
+
+    def write(self, frame):
+        if self.type == 'video':
+            self.output.write(frame)
+        elif self.type == 'image':
+            cv2.imwrite(self.path, frame)
+
+    def release(self):
+        self.writing = False
+        if self.type == 'video':
+            self.output.release()
+
+
+writer = Writer()
 
 
 def detect_faces(frame):
@@ -166,22 +196,27 @@ class Root(Widget):
 
     def load_video(self, filename):
         global capture
-        global output
+        global writer
         if len(filename) > 0:
             load_file_path = filename[0]
             filename = os.path.basename(load_file_path)
-            new_filename = 'output/' + filename[:filename.rfind('.')] + '.avi'
+            new_filename = os.path.join(
+                'output', filename[:filename.rfind('.')] + '.avi')
             capture = cv2.VideoCapture(load_file_path)
-            output = cv2.VideoWriter(new_filename,
-                                     cv2.VideoWriter_fourcc(*'MJPG'),
-                                     int(capture.get(5)), (int(capture.get(3)), int(capture.get(4))))
+            writer.set(type='video', path=new_filename, fps=int(
+                capture.get(5)), width=int(capture.get(3)), height=int(capture.get(4)))
         self.dismiss_popup()
 
     def load_image(self, filename):
         global capture
+        global writer
         if len(filename) > 0:
             load_file_path = filename[0]
             capture = cv2.VideoCapture(load_file_path)
+            filename = os.path.basename(load_file_path)
+            new_filename = os.path.join(
+                'output', filename[:filename.rfind('.')] + '.jpg')
+            writer.set(type='image', path=new_filename)
         self.dismiss_popup()
 
 
@@ -203,12 +238,14 @@ class CamApp(App):
 
     def display(self):
         global capture
-        global output
+        global writer
         ret, frame = capture.read()
 
         if ret:
             if agemodel is not None:
                 frame = detect_faces(frame)
+                if writer.writing:
+                    writer.write(frame)
 
             buf1 = cv2.flip(frame, 0)
             buf = buf1.tostring()
@@ -217,11 +254,9 @@ class CamApp(App):
             texture1.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
             self.layout.image.texture = texture1
 
-            if output is not None:
-                output.write(frame)
         else:
-            if output is not None:
-                output.release()
+            if writer.writing:
+                writer.release()
 
 
 if __name__ == '__main__':
