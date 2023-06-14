@@ -132,20 +132,7 @@ def process_and_predict(image):
 
     age = np.argmax(age)
 
-    if age == 0:  # to trzeba zmienic, jak beda inne przedzialy, albo liczba po prostu
-        return ('Age: [1, 2]')
-    elif age == 1:
-        return ('Age: [3, 9]')
-    elif age == 2:
-        return ('Age: [10, 20]')
-    elif age == 3:
-        return ('Age: [21, 27]')
-    elif age == 4:
-        return ('Age: [28, 45]')
-    elif age == 5:
-        return ('Age: [46, 65]')
-    else:
-        return ('Age: (65, 80]')
+    return f'Age: {age}'
 
 
 class LoadDialog(FloatLayout):
