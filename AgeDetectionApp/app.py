@@ -97,7 +97,8 @@ def detect_faces(frame):
 
             age_str = process_and_predict(extracted_face)
 
-            cv2.putText(frame, age_str, (x, y-10),
+            text_y = y-10 if y > int(frame.shape[0]/5) else h+25
+            cv2.putText(frame, age_str, (x, text_y),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36, 255, 12), 2)
     return frame
 
@@ -130,9 +131,7 @@ def process_and_predict(image):
     ar = ar.reshape(1, 200, 200, 1)
     age = agemodel.predict(ar)
 
-    age = np.argmax(age)
-
-    return f'Age: {age}'
+    return f'Age: {int(age)}'
 
 
 class LoadDialog(FloatLayout):
@@ -211,6 +210,7 @@ class CamApp(App):
 
     def build(self):
         Window.size = (1200, 700)
+        self.title = 'Age detection app'
         self.layout = Root()
         cv2.namedWindow("CV2 Image")
         Clock.schedule_interval(self.update, 1.0/30.0)
