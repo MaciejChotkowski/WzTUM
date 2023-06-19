@@ -1,4 +1,6 @@
-Datasets/
+Datasets/UTKFace
+Datasets/preprocessing/imdb_crop/
+Datasets/preprocessing/wiki_crop/
 imageclassification/
 .ipynb_checkpoints/
 AgeDetectionApp/output/
