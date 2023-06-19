@@ -20,10 +20,11 @@ from kivy.core.window import Window
 from kivy.properties import ObjectProperty
 from kivy.uix.popup import Popup
 from PIL import Image
+from datetime import datetime
 
 # Load model
-modelFile = "res10_300x300_ssd_iter_140000_fp16.caffemodel"
-configFile = "deploy.prototxt"
+modelFile = "../Models/face-detection/res10_300x300_ssd_iter_140000_fp16.caffemodel"
+configFile = "../Models/face-detection/deploy.prototxt"
 net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
 
 
@@ -80,55 +81,44 @@ def detect_faces(frame):
     for i in range(detections.shape[2]):
         confidence = detections[0, 0, i, 2]
         if confidence > 0.5:
-            box = detections[0, 0, i, 3:7] * np.array(
-                [frame.shape[1], frame.shape[0], frame.shape[1], frame.shape[0]])
-            (x, y, w, h) = box.astype("int")
+                    box = detections[0, 0, i, 3:7] * np.array([frame.shape[1], frame.shape[0], frame.shape[1], frame.shape[0]])
+                    box = box.astype("int")
+                    (x, y, x2, y2) = box.astype("int")
+                    r = (x2-x)-(y2-y)
+                    if(r>0):
+                        m = (y+y2)//2
+                        y = m - (x2-x)//2
+                        y2 = m + (x2-x)//2
+                    elif(r<0):
+                        m = (x+x2)//2
+                        x= m - (y2-y)//2
+                        x2 = m + (y2-y)//2
+                    
+                    x -= (x2-x)//20
+                    x2 +=(x2-x)//20
+                    y -= (y2-y)//20
+                    y2 +=(y2-y)//20
+                    if(x<0 or y<0):
+                        continue
+                    extracted_face = frame[y:y2, x:x2]
+                    
+                    cv2.rectangle(frame, (x, y), (x2, y2), (0, 255, 0), 2)
+                    #cv2.rectangle(frame, (x, y), (x2, y2), (0, 255, 0), 2)
+                    age_str = process_and_predict(extracted_face)
 
-            x = max(0, x - 20)  # subtract from the x-coordinate (left bound)
-            y = max(0, y - 20)  # subtract from the y-coordinate (top bound)
-            # add to the w-coordinate (right bound)
-            w = min(frame.shape[1], w + 20)
-            # add to the h-coordinate (bottom bound)
-            h = min(frame.shape[0], h + 20)
-
-            cv2.rectangle(frame, (x, y), (w, h), (0, 255, 0), 2)
-            extracted_face = frame[y:h, x:w]
-            # cv2.imwrite('extracted_face.png', extracted_face)
-
-            age_str = process_and_predict(extracted_face)
-
-            text_y = y-10 if y > int(frame.shape[0]/5) else h+25
-            cv2.putText(frame, age_str, (x, text_y),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36, 255, 12), 2)
+                    text_y = y-10 if y + (y2-y)/2 > int(frame.shape[0]/2) else y2+25
+                    cv2.putText(frame, age_str, (x, text_y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36, 255, 12), 2)
     return frame
 
 
 def process_and_predict(image):
-    im = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-    im = Image.fromarray(im)
-    width, height = im.size
-    if width == height:
-        im = im.resize((200, 200), Image.ANTIALIAS)
-    else:
-        if width > height:
-            left = width/2 - height/2
-            right = width/2 + height/2
-            top = 0
-            bottom = height
-        else:
-            left = 0
-            right = width
-            top = 0
-            bottom = width
-        im = im.crop((left, top, right, bottom))
-        im = im.resize((200, 200), Image.ANTIALIAS)
+    im = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    im = cv2.resize(im, (200, 200)) 
 
-    ar = np.asarray(im)
-    ar = ar.astype('float32')
+    ar = im.astype('float32')
     ar /= 255.0
-    # caly resizing moze tez mozna prosciej w cv2
-    ar = ar.reshape(1, 200, 200, 1)
+    ar = ar.reshape(1, 200, 200, 1) 
     age = agemodel.predict(ar)
 
     return f'Age: {int(age)}'
@@ -187,7 +177,7 @@ class Root(Widget):
             load_file_path = filename[0]
             filename = os.path.basename(load_file_path)
             new_filename = os.path.join(
-                'output', filename[:filename.rfind('.')] + '.avi')
+                'output', filename[:filename.rfind('.')] + '_' + datetime.now().strftime("%d.%m.%Y_%H.%M.%S") + '.avi')
             capture = cv2.VideoCapture(load_file_path)
             writer.set(type='video', path=new_filename, fps=int(
                 capture.get(5)), width=int(capture.get(3)), height=int(capture.get(4)))
@@ -201,7 +191,8 @@ class Root(Widget):
             capture = cv2.VideoCapture(load_file_path)
             filename = os.path.basename(load_file_path)
             new_filename = os.path.join(
-                'output', filename[:filename.rfind('.')] + '.jpg')
+                'output', filename[:filename.rfind('.')] + '_' + datetime.now().strftime("%d.%m.%Y_%H.%M.%S") + '.jpg')
+            print(new_filename)
             writer.set(type='image', path=new_filename)
         self.dismiss_popup()
 
