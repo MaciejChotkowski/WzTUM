@@ -5,3 +5,6 @@ imageclassification/
 .ipynb_checkpoints/
 AgeDetectionApp/output/
 Models/age-prediction/
+Datasets/IMDB-WIKI/
+Datasets/IMDB-WIKI-200/
+Datasets/IMDB-WIKI-multi/
