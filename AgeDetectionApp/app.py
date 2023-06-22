@@ -1,11 +1,7 @@
-import tensorflow as tf
 import os
 import cv2
-from enum import Enum
-# from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
-import imghdr
 from tensorflow import keras
 from kivy.app import App
 from kivy.uix.widget import Widget
@@ -19,20 +15,12 @@ from kivy.uix.button import Button
 from kivy.core.window import Window
 from kivy.properties import ObjectProperty
 from kivy.uix.popup import Popup
-from PIL import Image
 from datetime import datetime
 
 # Load model
 modelFile = "../Models/face-detection/res10_300x300_ssd_iter_140000_fp16.caffemodel"
 configFile = "../Models/face-detection/deploy.prototxt"
 net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
-
-
-print("Num of GPUs available: ", len(tf.test.gpu_device_name()))
-
-gpus = tf.config.experimental.list_physical_devices('GPU')
-for gpu in gpus:
-    tf.config.experimental.set_memory_growth(gpu, True)
 
 capture = cv2.VideoCapture(0)
 agemodel = None
